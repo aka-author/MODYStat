@@ -52,6 +52,12 @@ with diagnosis as (
                 l.age_when_examination_years,
                 l.age_when_examination_months
                 ) as age_when_latest_examination,
+            statistics.age_delta_months(
+                i.age_when_examination_years,
+                i.age_when_examination_months,
+                l.age_when_examination_years,
+                l.age_when_examination_months
+                ) as delta_age_months,
             statistics.age_months(
             c.age_when_disorders_were_found_years,
             c.age_when_disorders_were_found_months

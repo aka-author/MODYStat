@@ -1,3 +1,5 @@
+
+
 create or replace function statistics.guarantee_int(num numeric) returns int
     language plpgsql as $$
     begin
@@ -6,6 +8,7 @@ create or replace function statistics.guarantee_int(num numeric) returns int
             else return 0;
         end if;
     end $$;
+
 
 create or replace function statistics.choose_preferred_real(preferred real, fallback real) returns real
     language plpgsql as $$
@@ -16,6 +19,7 @@ create or replace function statistics.choose_preferred_real(preferred real, fall
         end if;
     end $$;
 
+
 create or replace function statistics.field_data_quality(field anyelement, score int default 1) returns int
     language plpgsql as $$
     begin
@@ -24,6 +28,7 @@ create or replace function statistics.field_data_quality(field anyelement, score
             else return 0;
         end if;
     end $$;
+
 
 create or replace function statistics.case_data_quality(
     age_when_disorders_were_found_months numeric,
@@ -53,11 +58,23 @@ create or replace function statistics.case_data_quality(
             statistics.field_data_quality(l_c_peptide_with_test_fasting);
     end $$;
 
+
 create or replace function statistics.age_months(years int, months int) returns int
     language plpgsql as $$
     begin
         return statistics.guarantee_int(years)*12 + statistics.guarantee_int(months);
     end $$;
+
+
+create or replace function statistics.age_delta_months(years_start int, months_start int,
+                                                       years_final int, months_final int) returns int
+    language plpgsql as $$
+    begin
+        return
+            (statistics.guarantee_int(years_final) - statistics.guarantee_int(years_start))*12 +
+             statistics.guarantee_int(months_final) - statistics.guarantee_int(months_start);
+    end $$;
+
 
 create or replace function statistics.numval(str varchar) returns numeric
     language plpgsql as $$
@@ -69,26 +86,30 @@ create or replace function statistics.numval(str varchar) returns numeric
                 end;
     end$$;
 
+
 create table statistics.effective_diagnosis (
     uuid                uuid default gen_random_uuid() not null primary key,
     source_diagnosis    varchar(255),
     effective_diagnosis varchar(255),
     comment             varchar
-)
+);
+
 
 create table statistics.outcomes (
     uuid                uuid default gen_random_uuid() not null primary key,
     code                int,
     outcome_name        varchar(255),
     comment             varchar
-)
+);
+
 
 create table statistics.treatment_modes (
     uuid                uuid default gen_random_uuid() not null primary key,
     code                int,
     treatment_mode_name varchar(255),
     comment             varchar
-)
+);
+
 
 create table statistics.cases (
 	uuid 				                    uuid default gen_random_uuid() not null primary key,
@@ -103,6 +124,7 @@ create table statistics.cases (
 	final_diagnosis 	                    varchar(255),
     comment 	                            varchar
 );
+
 
 create table statistics.observations (
 	uuid 											uuid default gen_random_uuid() not null primary key,
