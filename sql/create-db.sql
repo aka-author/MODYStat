@@ -1,3 +1,73 @@
+create or replace function statistics.parse_bool(bool_as_str varchar,
+                                                 str_true varchar default 'yes',
+                                                 str_false varchar default 'no',
+                                                 default_value bool default null) returns bool
+    language plpgsql as $$
+    declare
+        bool_as_str_pure varchar;
+        str_true_pure varchar;
+        str_false_pure varchar;
+    begin
+        bool_as_str_pure = upper(trim(bool_as_str));
+        str_true_pure = upper(trim(str_true));
+        str_false_pure = upper(trim(str_false));
+        if bool_as_str_pure = str_true_pure
+            then return true;
+        end if;
+        if bool_as_str_pure = str_false_pure
+            then return false;
+        end if;
+        return default_value;
+    end $$;
+
+
+create or replace function statistics.parse_int(int_as_str varchar,
+                                                format varchar default '9999999') returns int
+    language plpgsql as $$
+    declare
+        int_as_str_pure varchar;
+    begin
+        int_as_str_pure = trim(int_as_str);
+        if int_as_str ~ '^\d+$'
+            then return to_number(int_as_str, format);
+            else return null;
+        end if;
+    end $$;
+
+
+create or replace function statistics.parse_real(real_as_str varchar,
+                                                 format varchar default '9999999D999999') returns real
+    language plpgsql as $$
+    declare
+        real_as_str_pure varchar;
+    begin
+        real_as_str_pure = trim(real_as_str);
+        if real_as_str ~ '^(\d+)((,\d*)?)$'
+            then return to_number(real_as_str, format);
+            else return null;
+        end if;
+    end $$;
+
+
+create or replace function statistics.parse_sex(sex_as_str varchar,
+                                                str_male varchar,
+                                                str_female varchar) returns char
+    language plpgsql as $$
+    declare
+        sex_as_str_pure varchar;
+        str_male_pure varchar;
+        str_female_pure varchar;
+    begin
+        sex_as_str_pure = upper(trim(sex_as_str));
+        str_male_pure = upper(trim(str_male));
+        str_female_pure = upper(trim(str_female));
+
+        return
+            case
+                when sex_as_str_pure = str_male_pure then 'M'
+                when sex_as_str_pure = str_female_pure then 'F'
+            end;
+    end $$;
 
 
 create or replace function statistics.guarantee_int(num numeric) returns int
@@ -8,6 +78,8 @@ create or replace function statistics.guarantee_int(num numeric) returns int
             else return 0;
         end if;
     end $$;
+
+
 
 
 create or replace function statistics.choose_preferred_real(preferred real, fallback real) returns real
@@ -74,17 +146,6 @@ create or replace function statistics.age_delta_months(years_start int, months_s
             (statistics.guarantee_int(years_final) - statistics.guarantee_int(years_start))*12 +
              statistics.guarantee_int(months_final) - statistics.guarantee_int(months_start);
     end $$;
-
-
-create or replace function statistics.numval(str varchar) returns numeric
-    language plpgsql as $$
-    begin
-       return
-            case
-                when str ~ '(\s*)(\d+)((,\d*)?)(\s*)'
-                    then to_number(str, '9999999D999999')
-                end;
-    end$$;
 
 
 create table statistics.effective_diagnosis (
@@ -314,17 +375,16 @@ create table statistics.source_observations (
 );
 
 
-create table statistics.source_observations_str (
-	--uuid 											uuid default gen_random_uuid() primary key,
+create table statistics.imported_observations_raw (
 	case_no 										varchar,
-	examination_no 									varchar,
+	observation_no 									varchar,
 	last_name 										varchar,
 	first_name 										varchar,
 	otchestvo 										varchar,
 	sex 											varchar,
 	date_of_birth 									varchar,
-	age_when_examination_years 						varchar,
-	age_when_examination_months 					varchar,
+	age_when_observation_years 						varchar,
+	age_when_observation_months 					varchar,
 	age_when_disorders_were_found_years 			varchar,
 	age_when_disorders_were_found_months 			varchar,
 	ketosis_at_manifestation 						varchar,
