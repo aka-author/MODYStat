@@ -71,7 +71,7 @@ with diagnosis as (
             i.insulin_with_breakfast_test_fasting as i_insulin_with_breakfast_test_fasting,
             l.insulin_with_breakfast_test_fasting as l_insulin_with_breakfast_test_fasting,
             statistics.choose_preferred_real(i.ogtt_c_peptide_test_fasting,
-                l.c_peptide_with_breakfast_test_fasting
+                i.c_peptide_with_breakfast_test_fasting
                 ) as i_c_peptide_with_test_fasting,
             statistics.choose_preferred_real(
                 l.ogtt_c_peptide_test_fasting,
@@ -120,10 +120,104 @@ with diagnosis as (
 
     from
         clinical_cases
+    where delta_age_months < 0
     order by
         data_quality desc;
 
 
+/* Assessing initial observations */
+
+with diagnosis as (
+    select
+        c.uuid,
+        effective_diagnosis
+    from
+        statistics.cases c
+            join
+        statistics.effective_diagnosis e
+            on
+        c.final_diagnosis = e.source_diagnosis),
+    initial_observations as (
+        select * from statistics.observations where observation_no=1
+    ),
+    clinical_cases as (
+        select
+            case_no,
+            trim(c.last_name) as last_name,
+            trim(c.first_name) as first_name,
+            effective_diagnosis,
+            statistics.age_months(
+                i.age_when_examination_years,
+                i.age_when_examination_months) as age_when_initial_examination,
+            statistics.age_months(
+                i.age_when_disorders_were_found_years,
+                i.age_when_disorders_were_found_months) as age_when_disorders_were_found_months,
+            i.birth_height as birth_height,
+            i.birth_weight as birth_weight,
+            i.glycated_hemoglobin_for_diagnosis_hba1c as glycated_hemoglobin_for_diagnosis_hba1c,
+            i.glucose_fasting_max as glucose_fasting_max,
+            i.insulin_with_breakfast_test_fasting as insulin_with_breakfast_test_fasting,
+
+            statistics.choose_preferred_real(i.ogtt_c_peptide_test_fasting,
+                i.c_peptide_with_breakfast_test_fasting
+                ) as c_peptide_with_test_fasting,
+            i.treatment_sulfonylurea,
+            i.treatment_liraglutide,
+            i.treatment_metformin,
+            i.treatment_insulin,
+
+            i.treatment_sulfonylurea is not null
+                or
+            i.treatment_liraglutide is not null
+                or
+            i.treatment_metformin is not null
+                or
+            i.treatment_insulin is not null as received_treatment,
+
+            IAA_to_insulin,
+	        ICA_to_pancreatic_beta_cells,
+	        GAD_glutamate_decarboxylase,
+	        IA2_to_tyrosine_phosphatase,
+	        ZnT8_to_zinc_transporter,
+	        HLA_gt_1_DRB1,
+	        HLA_gt_1_DQA1,
+	        HLA_gt_1_DQB1,
+	        HLA_gt_2_DRB1,
+	        HLA_gt_2_DQA1,
+	        HLA_gt_2_DQB1
+        from
+            statistics.cases c,
+            initial_observations i,
+            diagnosis d
+        where
+            c.uuid = i.case_uuid
+                and
+            c.uuid = d.uuid
+    )
+    select *,
+        statistics.initial_observation_data_quality(
+        age_when_disorders_were_found_months,
+        birth_height,
+        birth_weight,
+        glycated_hemoglobin_for_diagnosis_hba1c,
+        glucose_fasting_max,
+        insulin_with_breakfast_test_fasting,
+        c_peptide_with_test_fasting,
+        IAA_to_insulin,
+	    ICA_to_pancreatic_beta_cells,
+	    GAD_glutamate_decarboxylase,
+	    IA2_to_tyrosine_phosphatase,
+	    ZnT8_to_zinc_transporter,
+	    HLA_gt_1_DRB1,
+	    HLA_gt_1_DQA1,
+	    HLA_gt_1_DQB1,
+	    HLA_gt_2_DRB1,
+	    HLA_gt_2_DQA1,
+	    HLA_gt_2_DQB1) as data_quality
+    from
+        clinical_cases
+    order by
+        data_quality desc;
 
 
 

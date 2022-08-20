@@ -1,7 +1,10 @@
 delete from statistics.imported_observations_raw where true;
 
+delete from statistics.observations where true;
+delete from statistics.cases where true;
+
 copy statistics.imported_observations_raw
-    from 'C:\privat\misha\mody\report-2022-01-10\source\targetTableOlga.csv'
+    from 'C:\privat\misha\mody\dbimport\2022-05-15\targetTableOlga.csv'
     delimiter ','
     encoding 'utf8'
     csv header;
@@ -119,7 +122,7 @@ select c.uuid,
        statistics.parse_bool(polydipsia, 'да'),
        statistics.parse_bool(glucosuria, 'да'),
        statistics.parse_bool(weight_loss, 'да'),
-       statistics.parse_bool(healthy ? 'да'),
+       statistics.parse_bool(healthy, 'да'),
        statistics.parse_bool(gestational_diabetes, 'да'),
        statistics.parse_bool(glucose_intolerance, 'да'),
        statistics.parse_bool(violation_of_glycemia_fasting, 'да'),
@@ -183,12 +186,12 @@ select c.uuid,
        statistics.parse_real(GAD_glutamate_decarboxylase),
        statistics.parse_real(IA2_to_tyrosine_phosphatase),
        statistics.parse_real(ZnT8_to_zinc_transporter),
-       statistics.parse_real(HLA_gt_1_DRB1),
-       statistics.parse_real(HLA_gt_1_DQA1),
-       statistics.parse_real(HLA_gt_1_DQB1),
-       statistics.parse_real(HLA_gt_2_DRB1),
-       statistics.parse_real(HLA_gt_2_DQA1),
-       statistics.parse_real(HLA_gt_2_DQB1),
+       HLA_gt_1_DRB1,
+       HLA_gt_1_DQA1,
+       HLA_gt_1_DQB1,
+       HLA_gt_2_DRB1,
+       HLA_gt_2_DQA1,
+       HLA_gt_2_DQB1,
        notes_on_trees,
        gene,
        mutation
