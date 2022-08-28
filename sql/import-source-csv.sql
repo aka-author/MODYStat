@@ -1,13 +1,13 @@
 delete from statistics.imported_observations_raw where true;
 
-delete from statistics.observations where true;
-delete from statistics.cases where true;
-
 copy statistics.imported_observations_raw
     from 'C:\privat\misha\mody\dbimport\2022-05-15\targetTableOlga.csv'
     delimiter ','
     encoding 'utf8'
     csv header;
+
+delete from statistics.observations where true;
+delete from statistics.cases where true;
 
 insert into statistics.cases (case_no,
                               last_name,

@@ -213,6 +213,24 @@ create or replace function statistics.dgroup_M3vsM2(d varchar) returns varchar
 	end $$;
 
 
+create or replace function statistics.useful_max(v1 real, v2 real) returns real
+language plpgsql as $$
+begin
+    if v1 is not null and v2 is null
+        then return v1;
+    elseif v1 is null and v2 is not null
+        then return v2;
+    elseif v1 is not null and v2 is not null
+        then begin
+            if v1 > v1 then return v1; else return v2; end if;
+        end;
+    else return null;
+    end if;
+end $$;
+
+
+
+
 create or replace function statistics.degree(
         glucose_fasting_max real, OGTT_glucose_test_fasting real,
         OGTT_glucose_test_120 real, postprandial_glucose_after_meals_max real) returns varchar
@@ -626,7 +644,9 @@ create or replace view statistics.observations_extended
             statistics.degree(glucose_fasting_max, OGTT_glucose_test_fasting,
                               OGTT_glucose_test_120, postprandial_glucose_after_meals_max) as degree
         from
-            statistics.observations;
+            statistics.observations
+        where
+            statistics.age_months(age_when_examination_years, age_when_examination_months) <= 25*12;
 
 
 drop view statistics.flat_cases;
@@ -639,7 +659,8 @@ create view statistics.flat_cases
        (array_agg(d.last_name))[1] as last_name,
        (array_agg(d.sex))[1] as sex,
        (array_agg(d.age_when_disorders_were_found_months))[1] as age_when_disorders_were_found_months,
-       (array_agg(d.effective_diagnosis))[1] as effective_diagnosis,
+       max(d.effective_diagnosis) as effective_diagnosis,
+       --(array_agg(d.effective_diagnosis))[1] as effective_diagnosis,
        statistics.dgroup_M3vsM2((array_agg(d.effective_diagnosis))[1]) as M3vsM2,
        avg(glycated_hemoglobin_for_diagnosis_hba1c) as glycated_hemoglobin_for_diagnosis_hba1c,
        avg(birth_height) as birth_height,
@@ -647,6 +668,7 @@ create view statistics.flat_cases
        avg(statistics.choose_preferred_real(
             ogtt_c_peptide_test_fasting,
             c_peptide_with_breakfast_test_fasting)) as c_peptide_with_test_fasting,
+       avg(body_mass_index_sds) as body_mass_index_sds,
        avg(glucose_fasting_min) as glucose_fasting_min,
        avg(glucose_fasting_max) as glucose_fasting_max,
        avg(postprandial_glucose_after_meals_max) as postprandial_glucose_after_meals_max,
@@ -707,6 +729,7 @@ create view statistics.flat_diagnosis
        avg(glycated_hemoglobin_for_diagnosis_hba1c) as glycated_hemoglobin_for_diagnosis_hba1c,
        avg(birth_height) as birth_height,
        avg(birth_weight) as birth_weight,
+       avg(body_mass_index_sds) as body_mass_index_sds,
        avg(glucose_fasting_min) as glucose_fasting_min,
        avg(glucose_fasting_max) as glucose_fasting_max,
        avg(postprandial_glucose_after_meals_max) as postprandial_glucose_after_meals_max,
@@ -749,3 +772,68 @@ create view statistics.flat_diagnosis
         statistics.flat_cases d
     group by
         d.effective_diagnosis;
+
+
+create view statistics.diagnosis__birth_weight
+    as
+select effective_diagnosis, birth_weight from statistics.flat_cases
+    where birth_weight is not null order by effective_diagnosis;
+
+
+create view statistics.diagnosis__glycated_hemoglobin_for_diagnosis_hba1c
+    as
+select effective_diagnosis, glycated_hemoglobin_for_diagnosis_hba1c from statistics.flat_cases
+    where glycated_hemoglobin_for_diagnosis_hba1c is not null order by effective_diagnosis;
+
+
+create view statistics.diagnosis__glucose_fasting_min
+    as
+select effective_diagnosis, glucose_fasting_min from statistics.flat_cases
+    where glucose_fasting_min is not null order by effective_diagnosis;
+
+create view statistics.diagnosis__glucose_fasting_max
+    as
+select effective_diagnosis, glucose_fasting_max from statistics.flat_cases
+    where glucose_fasting_max is not null order by effective_diagnosis;
+
+
+create view statistics.diagnosis__ogtt_insulin_test_fasting
+    as
+select effective_diagnosis, ogtt_insulin_test_fasting from statistics.flat_cases
+    where ogtt_insulin_test_fasting is not null order by effective_diagnosis;
+
+create view statistics.diagnosis__c_peptide_with_breakfast_test_fasting
+    as
+select effective_diagnosis, c_peptide_with_breakfast_test_fasting from statistics.flat_cases
+    where c_peptide_with_breakfast_test_fasting is not null order by effective_diagnosis;
+
+create view statistics.diagnosis__body_mass_index_sds
+    as
+select effective_diagnosis, body_mass_index_sds from statistics.flat_cases
+    where body_mass_index_sds is not null order by effective_diagnosis;
+
+create view statistics.diagnosis__glucose_with_breakfast_test_fasting
+    as
+select effective_diagnosis, glucose_with_breakfast_test_fasting from statistics.flat_cases
+    where glucose_with_breakfast_test_fasting is not null order by effective_diagnosis;
+
+create view statistics.diagnosis__iaa_to_insulin
+    as
+select effective_diagnosis, iaa_to_insulin from statistics.flat_cases
+    where iaa_to_insulin is not null order by effective_diagnosis;
+
+create view statistics.diagnosis__ica_to_pancreatic_beta_cells
+    as
+select effective_diagnosis, ica_to_pancreatic_beta_cells from statistics.flat_cases
+    where ica_to_pancreatic_beta_cells is not null order by effective_diagnosis;
+
+create view statistics.diagnosis__gad_glutamate_decarboxylase
+    as
+select effective_diagnosis, gad_glutamate_decarboxylase from statistics.flat_cases
+    where gad_glutamate_decarboxylase is not null order by effective_diagnosis;
+
+create view statistics.diagnosis__znt8_to_zinc_transporter
+    as
+select effective_diagnosis, znt8_to_zinc_transporter from statistics.flat_cases
+    where znt8_to_zinc_transporter is not null order by effective_diagnosis;
+
